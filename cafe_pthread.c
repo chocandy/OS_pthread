@@ -41,7 +41,7 @@ void print_time() {
 
 // ================= 스레드 함수 =================
 
-// 1. 차량 고객 스레드
+// 1. Car thread
 void* car_thread(void* arg) {
     int car_id = *(int*)arg;
 
@@ -49,7 +49,7 @@ void* car_thread(void* arg) {
 
     if (waiting_cars >= M) {
         print_time();
-        printf("차량 %d: 대기 줄이 너무 길어 그냥 지나갑니다(Drive away).\n", car_id);
+        printf("Car %d: Lane is full, driving away.\n", car_id);
         pthread_mutex_unlock(&lane_mutex);
         return NULL;
     }
@@ -59,7 +59,7 @@ void* car_thread(void* arg) {
     waiting_cars++;
 
     print_time();
-    printf("차량 %d 진입 -> 차로에서 대기합니다. (차로 %d/%d)\n",
+    printf("Car %d enters -> waiting in lane. (Lane %d/%d)\n",
            car_id, waiting_cars, M);
 
     pthread_mutex_unlock(&lane_mutex);
@@ -69,7 +69,7 @@ void* car_thread(void* arg) {
     return NULL;
 }
 
-// 2. 주문 접수 직원 스레드
+// 2. Order taker thread
 void* taker_thread(void* arg) {
     while (1) {
         sem_wait(&cars_in_lane);
@@ -83,14 +83,14 @@ void* taker_thread(void* arg) {
         pthread_mutex_unlock(&lane_mutex);
 
         print_time();
-        printf("주문 접수 직원: 차량 %d 주문서 레일에 등록. (차로 %d/%d)\n",
+        printf("Order taker: Processing order from car %d. (Lane %d/%d)\n",
                car_id, waiting_cars, M);
 
         sleep(rand() % 2 + 1);
 
         if (sem_trywait(&empty_slots) != 0) {
             print_time();
-            printf("주문 접수 직원: 주문서 레일이 꽉 찼습니다. 대기합니다.\n");
+            printf("Order taker: Order rail is full. Waiting...\n");
             sem_wait(&empty_slots);
         }
 
@@ -101,7 +101,7 @@ void* taker_thread(void* arg) {
         rail_count++;
 
         print_time();
-        printf("주문 접수 직원: 차량 %d 주문서 레일에 등록. (레일 %d/%d)\n",
+        printf("Order taker: Car %d order placed on rail. (Rail %d/%d)\n",
                car_id, rail_count, N);
 
         pthread_mutex_unlock(&rail_mutex);
@@ -112,7 +112,7 @@ void* taker_thread(void* arg) {
     return NULL;
 }
 
-// 3. 바리스타 스레드
+// 3. Barista thread
 void* barista_thread(void* arg) {
     int barista_id = *(int*)arg;
 
@@ -126,7 +126,7 @@ void* barista_thread(void* arg) {
         rail_count--;
 
         print_time();
-        printf("바리스타 %d: 차량 %d 음료 제조 시작. (레일 %d/%d)\n",
+        printf("Barista %d: Start making drink for car %d. (Rail %d/%d)\n",
                barista_id, car_id, rail_count, N);
 
         pthread_mutex_unlock(&rail_mutex);
@@ -136,7 +136,7 @@ void* barista_thread(void* arg) {
         sleep(rand() % 3 + 3);
 
         print_time();
-        printf("바리스타 %d: 차량 %d의 [아이스 아메리카노] 제조 완료!\n",
+        printf("Barista %d: Completed [Iced Americano] for car %d.\n",
                barista_id, car_id);
     }
 
